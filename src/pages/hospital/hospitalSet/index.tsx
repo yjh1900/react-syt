@@ -1,20 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Card, Button, Modal, Form, Input, Spin, Space, Table } from 'antd'
+import { Card, Button, Modal, Form, Input, Spin, Space, Table, message } from 'antd'
 import { useAppSelector } from '@/app/hooks'
 import { selectUser } from '@pages/login/slice'
 import { SearchOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import type { HospitalList, HospitalItem } from '@/api/hospital/hospitalSet/model/hospitalTypes'
-import { getHospitalSetListApi } from '@/api/hospital/hospitalSet'
-
-const onFinish = (values: any) => {
-  console.log('Success:', values)
-}
-
-const onFinishFailed = (errorInfo: any) => {
-  console.log('Failed:', errorInfo)
-}
+import { getHospitalSetListApi, addHospitalSetListApi } from '@/api/hospital/hospitalSet'
 
 interface DataType {
   key: string
@@ -103,20 +95,49 @@ function HospitalSet() {
   const [current, setCurrent] = useState<number>(1)
   const [pageSize, setPageSize] = useState<number>(5)
   const [loading, setLoading] = useState(false)
-  const [isAddOrUpdateShow, setIsAddOrUpdateShow] = useState(false)
+  const [isAddOrUpdateShow, setIsAddOrUpdateShow] = useState<boolean>(false)
+  // form组件
+  const [addForm] = Form.useForm()
+  const [searchForm] = Form.useForm()
 
   // 请求医院列表
   async function getHospitalSetList(page: number, limit: number) {
     setLoading(true)
-    const res = await getHospitalSetListApi(page, limit)
+    const { hosname, hoscode } = searchForm.getFieldsValue()
+    const res = await getHospitalSetListApi(page, limit, hosname, hoscode)
     setHospitalListData(res.records)
     setTotal(res.total)
     setLoading(false)
   }
 
+  // 搜索医院
+  const onFinish = (values: any) => {
+    getHospitalSetList(current, pageSize)
+    setCurrent(1)
+  }
+  const resetForm = () => {
+    // 将表单值置空
+    searchForm.setFieldsValue({ hosname: undefined, hoscode: undefined })
+    // 重新渲染列表
+    getHospitalSetList(current, pageSize)
+  }
+  const onFinishFailed = (errorInfo: any) => {
+    console.log('Failed:', errorInfo)
+  }
+
+  // 提交添加表单
+  const onFinishModal = async (values: any) => {
+    console.log('Success:', values)
+    // setIsAddOrUpdateShow(false)
+    await addHospitalSetListApi(values)
+    setIsAddOrUpdateShow(false)
+    getHospitalSetList(current, pageSize)
+    message.success('添加医院成功')
+  }
+  const onFinishFailedModal = () => {}
   // 多选
   const onSelectChange = (newSelectedRowKeys: React.Key[]) => {
-    console.log('selectedRowKeys changed: ', newSelectedRowKeys)
+    // console.log('selectedRowKeys changed: ', newSelectedRowKeys)
     setSelectedRowKeys(newSelectedRowKeys)
   }
 
@@ -125,6 +146,10 @@ function HospitalSet() {
     setCurrent(page)
     setPageSize(size)
     getHospitalSetList(page, size)
+  }
+
+  const searchHospital = () => {
+    console.log(searchForm, 'a')
   }
 
   const showModal = () => {
@@ -149,31 +174,74 @@ function HospitalSet() {
   }, [])
   return (
     <Card style={{ minHeight: 'calc(100vh - 64px)' }}>
-      <Form name="basic" layout="inline" initialValues={{ remember: true }} onFinish={onFinish} onFinishFailed={onFinishFailed} autoComplete="off">
-        <Form.Item name="username" rules={[{ required: true, message: 'Please input your username!' }]}>
+      <Form form={searchForm} name="basic" layout="inline" initialValues={{ remember: true }} onFinish={onFinish} onFinishFailed={onFinishFailed} autoComplete="off">
+        <Form.Item name="hosname">
           <Input placeholder="医院名称" />
         </Form.Item>
-        <Form.Item name="password" rules={[{ required: true, message: 'Please input your password!' }]}>
+        <Form.Item name="hoscode">
           <Input placeholder="医院编号" />
         </Form.Item>
         <Form.Item>
-          <Button type="primary" htmlType="submit">
+          <Button type="primary" htmlType="submit" onClick={searchHospital}>
             <SearchOutlined />
             查询
           </Button>
         </Form.Item>
         <Form.Item>
-          <Button htmlType="submit">清空</Button>
+          <Button onClick={resetForm}>清空</Button>
         </Form.Item>
       </Form>
 
       <Space style={{ marginTop: 20 }}>
-        <Button type="primary">添加</Button>
+        <Button type="primary" onClick={showModal}>
+          添加
+        </Button>
         {/* 危险按钮是属性而不是type */}
         <Button type="primary" danger>
           批量删除
         </Button>
       </Space>
+
+      {/* 模态框 */}
+      {/* visible控制可见性，版本大于4.23使用open属性 */}
+      <Modal title="添加医院" visible={isAddOrUpdateShow} onOk={handleOk} onCancel={handleCancel} footer={null}>
+        <Form form={addForm} name="basic" labelCol={{ span: 6, offset: 1 }} wrapperCol={{ span: 15 }} onFinish={onFinishModal} onFinishFailed={onFinishFailedModal}>
+          <Form.Item label="医院名称" name="hosname" rules={[{ required: true, message: '请填写医院名称' }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item label="医院编码" name="hoscode" rules={[{ required: true, message: '请填写医院编码' }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item label="api基础路径" name="apiUrl" rules={[{ required: true, message: '请填写api基础路径' }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item label="联系人名称" name="contactsName" rules={[{ required: true, message: '请填写联系人名称' }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item
+            label="联系人手机"
+            name="contactsPhone"
+            rules={[
+              {
+                required: true,
+                message: '请填写手机号',
+                pattern: /^1[3-9]\d{9}$/,
+              },
+            ]}
+          >
+            <Input />
+          </Form.Item>
+
+          <Form.Item wrapperCol={{ offset: 10, span: 16 }}>
+            <Space>
+              <Button type="primary" htmlType="submit">
+                保存
+              </Button>
+              <Button onClick={handleCancel}>返回</Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
 
       <Spin spinning={loading}>
         <Table
