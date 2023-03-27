@@ -1,0 +1,23 @@
+.tab{
+  padding: 6px 16px;
+  margin-right: 5px;
+  background-color: #fff;
+  .tab-link{
+    color: rgba(0, 0, 0, 0.85)
+  }
+}
+
+.tab.active{
+  .tab-close{
+    color: #1DA57A;
+    cursor: pointer;
+    transition: transform .2s;
+    margin-left: 5px;
+    &:hover{
+      transform: scale(1.1);
+    }
+  }
+  .tab-link{
+    color: #1DA57A;
+  }
+}
