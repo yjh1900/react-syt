@@ -6,7 +6,7 @@ import { selectUser } from '@pages/login/slice'
 import { SearchOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import type { HospitalList, HospitalItem } from '@/api/hospital/hospitalSet/model/hospitalTypes'
-import { getHospitalSetListApi, addHospitalSetListApi, updateHospitalSetListApi } from '@/api/hospital/hospitalSet'
+import { getHospitalSetListApi, deleteHospitalSetListApi, addHospitalSetListApi, updateHospitalSetListApi } from '@/api/hospital/hospitalSet'
 
 interface DataType {
   key: string
@@ -81,7 +81,12 @@ function HospitalSet() {
           <Space>
             <Button type="primary" icon={<EditOutlined />} onClick={() => showModal(row)}></Button>
             {/* onOpenChange={() => console.log('open change')} */}
-            <Popconfirm title="Title" onConfirm={confirm}>
+            <Popconfirm
+              title={`确认删除${row.hosname}吗？`}
+              onConfirm={() => {
+                confirm(row.id)
+              }}
+            >
               <Button type="primary" danger icon={<DeleteOutlined />}></Button>
             </Popconfirm>
           </Space>
@@ -206,10 +211,10 @@ function HospitalSet() {
   }
 
   //   删除
-  const confirm = () =>
-    new Promise((resolve) => {
-      setTimeout(() => resolve(null), 3000)
-    })
+  const confirm = async (id: number) => {
+    await deleteHospitalSetListApi(id)
+    getHospitalSetList(current, pageSize)
+  }
   /* 
        如果在useEffect的第二个参数,传入一个空的数组,
        则useEffect只相当于componentDidMount
@@ -219,6 +224,10 @@ function HospitalSet() {
   useEffect(() => {
     getHospitalSetList(current, pageSize)
   }, [])
+
+  const obj = {
+    marginTop: 20,
+  }
   return (
     <Card style={{ minHeight: 'calc(100vh - 64px)' }}>
       <Form form={searchForm} name="basic" layout="inline" initialValues={{ remember: true }} onFinish={onFinish} onFinishFailed={onFinishFailed} autoComplete="off">
@@ -239,7 +248,7 @@ function HospitalSet() {
         </Form.Item>
       </Form>
 
-      <Space style={{ marginTop: 20 }}>
+      <Space style={obj}>
         <Button type="primary" onClick={() => showModal()}>
           添加
         </Button>

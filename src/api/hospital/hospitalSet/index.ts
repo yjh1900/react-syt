@@ -12,3 +12,7 @@ export const addHospitalSetListApi = (data: HospitalItem) => {
 export const updateHospitalSetListApi = (data: HospitalItem) => {
   return request.put<any, null>(`/admin/hosp/hospitalSet/update`, data)
 }
+
+export const deleteHospitalSetListApi = (id: number) => {
+  return request.delete<any, null>(`/admin/hosp/hospitalSet/remove/${id}`)
+}
