@@ -8,3 +8,7 @@ export const getHospitalSetListApi = (page: number, limit: number, hosname?: str
 export const addHospitalSetListApi = (data: HospitalItem) => {
   return request.post<any, null>(`/admin/hosp/hospitalSet/save`, data)
 }
+
+export const updateHospitalSetListApi = (data: HospitalItem) => {
+  return request.put<any, null>(`/admin/hosp/hospitalSet/update`, data)
+}

@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Card, Button, Modal, Form, Input, Spin, Space, Table, message } from 'antd'
+import { Card, Button, Popconfirm, Modal, Form, Input, Spin, Space, Table, message } from 'antd'
 import { useAppSelector } from '@/app/hooks'
 import { selectUser } from '@pages/login/slice'
 import { SearchOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import type { HospitalList, HospitalItem } from '@/api/hospital/hospitalSet/model/hospitalTypes'
-import { getHospitalSetListApi, addHospitalSetListApi } from '@/api/hospital/hospitalSet'
+import { getHospitalSetListApi, addHospitalSetListApi, updateHospitalSetListApi } from '@/api/hospital/hospitalSet'
 
 interface DataType {
   key: string
@@ -16,77 +16,79 @@ interface DataType {
   tags: string[]
 }
 
-const columns: ColumnsType<HospitalItem> = [
-  //  title: 'Name', // 决定了表头要展示的信息
-  //  // 如果我们既写了dataIndex,又写了render.则dataIndex的值决定了render函数第一次参数接收到什么数据
-  //  // 比如此时写了name,则render函数中第一个参数就是每一个data数组中对象的name属性的值
-  //  // 如果我们不写dataIndex,则render函数中第一个参数,就是data中的每一个数据对象
-  //  dataIndex: 'address',
-  //  key: 'name',
-  //  // 1. 如果写了render属性,则这一列到底要展示什么数据,有render函数的返回值决定
-  //  // 2. 如果不写render,只写了dataIndex,则这一列到底展示什么数据,有dataIndex的值决定.dataIndex的值应该是data数据中每一个对象的属性
-  //  // render: (text, record, index) => {
-  //  //   // text 收到了dataIndex的影响
-  //  //   // record一定是data数组中的每一个数据对象
-  //  //   // index 一定是data数组中的每一个数据对象的下标
-  //  //   console.log(text, record, index)
-  //  //   return 1
-  //  // },
-  {
-    title: '序号',
-    render(a, b, index) {
-      return index + 1
-    },
-    width: 80,
-    align: 'center',
-  },
-  {
-    title: '医院名称',
-    dataIndex: 'hosname',
-    key: 'hosname',
-  },
-  {
-    title: '医院编码',
-    dataIndex: 'hoscode',
-    key: 'hoscode',
-  },
-  {
-    title: 'api基础路径',
-    dataIndex: 'apiUrl',
-    key: 'apiUrl',
-  },
-  {
-    title: '签名',
-    dataIndex: 'signKey',
-    key: 'signKey',
-  },
-  {
-    title: '联系人名称',
-    dataIndex: 'contactsName',
-    key: 'contactsName',
-  },
-  {
-    title: '联系人手机号',
-    dataIndex: 'contactsPhone',
-    key: 'contactsPhone',
-  },
-  {
-    title: '操作',
-    // 粘滞在右侧
-    fixed: 'right',
-    width: 100,
-    render: (_, row) => (
-      <>
-        <Space>
-          <Button type="primary" icon={<EditOutlined />}></Button>
-          <Button type="primary" danger icon={<DeleteOutlined />}></Button>
-        </Space>
-      </>
-    ),
-  },
-]
-
 function HospitalSet() {
+  const columns: ColumnsType<HospitalItem> = [
+    //  title: 'Name', // 决定了表头要展示的信息
+    //  // 如果我们既写了dataIndex,又写了render.则dataIndex的值决定了render函数第一次参数接收到什么数据
+    //  // 比如此时写了name,则render函数中第一个参数就是每一个data数组中对象的name属性的值
+    //  // 如果我们不写dataIndex,则render函数中第一个参数,就是data中的每一个数据对象
+    //  dataIndex: 'address',
+    //  key: 'name',
+    //  // 1. 如果写了render属性,则这一列到底要展示什么数据,有render函数的返回值决定
+    //  // 2. 如果不写render,只写了dataIndex,则这一列到底展示什么数据,有dataIndex的值决定.dataIndex的值应该是data数据中每一个对象的属性
+    //  // render: (text, record, index) => {
+    //  //   // text 收到了dataIndex的影响
+    //  //   // record一定是data数组中的每一个数据对象
+    //  //   // index 一定是data数组中的每一个数据对象的下标
+    //  //   console.log(text, record, index)
+    //  //   return 1
+    //  // },
+    {
+      title: '序号',
+      render(a, b, index) {
+        return index + 1
+      },
+      width: 80,
+      align: 'center',
+    },
+    {
+      title: '医院名称',
+      dataIndex: 'hosname',
+      key: 'hosname',
+    },
+    {
+      title: '医院编码',
+      dataIndex: 'hoscode',
+      key: 'hoscode',
+    },
+    {
+      title: 'api基础路径',
+      dataIndex: 'apiUrl',
+      key: 'apiUrl',
+    },
+    {
+      title: '签名',
+      dataIndex: 'signKey',
+      key: 'signKey',
+    },
+    {
+      title: '联系人名称',
+      dataIndex: 'contactsName',
+      key: 'contactsName',
+    },
+    {
+      title: '联系人手机号',
+      dataIndex: 'contactsPhone',
+      key: 'contactsPhone',
+    },
+    {
+      title: '操作',
+      // 粘滞在右侧
+      fixed: 'right',
+      width: 100,
+      render: (_, row) => (
+        <>
+          <Space>
+            <Button type="primary" icon={<EditOutlined />} onClick={() => showModal(row)}></Button>
+            {/* onOpenChange={() => console.log('open change')} */}
+            <Popconfirm title="Title" onConfirm={confirm}>
+              <Button type="primary" danger icon={<DeleteOutlined />}></Button>
+            </Popconfirm>
+          </Space>
+        </>
+      ),
+    },
+  ]
   const user = useAppSelector(selectUser)
   const { t } = useTranslation(['app'])
   const [hospitalListData, setHospitalListData] = useState<HospitalList>([])
@@ -129,10 +131,28 @@ function HospitalSet() {
   const onFinishModal = async (values: any) => {
     console.log('Success:', values)
     // setIsAddOrUpdateShow(false)
-    await addHospitalSetListApi(values)
-    setIsAddOrUpdateShow(false)
-    getHospitalSetList(current, pageSize)
-    message.success('添加医院成功')
+
+    if (addForm.getFieldValue('id')) {
+      await updateHospitalSetListApi({ ...values, id: addForm.getFieldValue('id') })
+      setIsAddOrUpdateShow(false)
+      getHospitalSetList(current, pageSize)
+      message.success('修改医院成功')
+    } else {
+      await addHospitalSetListApi(values)
+      setIsAddOrUpdateShow(false)
+      getHospitalSetList(current, pageSize)
+      message.success('添加医院成功')
+    }
+
+    // 清空表单
+    addForm.setFieldsValue({
+      id: undefined,
+      hosname: undefined,
+      hoscode: undefined,
+      contactsPhone: undefined,
+      apiUrl: undefined,
+      contactsName: undefined,
+    })
   }
   const onFinishFailedModal = () => {}
   // 多选
@@ -152,8 +172,20 @@ function HospitalSet() {
     console.log(searchForm, 'a')
   }
 
-  const showModal = () => {
+  const showModal = (row?: HospitalItem) => {
     setIsAddOrUpdateShow(true)
+    if (!row) return
+    console.log(row)
+
+    const { hosname, hoscode, contactsPhone, apiUrl, contactsName, id } = row
+    addForm.setFieldsValue({
+      id,
+      hosname,
+      hoscode,
+      contactsPhone,
+      apiUrl,
+      contactsName,
+    })
   }
 
   const handleOk = () => {
@@ -162,7 +194,22 @@ function HospitalSet() {
 
   const handleCancel = () => {
     setIsAddOrUpdateShow(false)
+    // 清空表单
+    addForm.setFieldsValue({
+      id: undefined,
+      hosname: undefined,
+      hoscode: undefined,
+      contactsPhone: undefined,
+      apiUrl: undefined,
+      contactsName: undefined,
+    })
   }
+
+  //   删除
+  const confirm = () =>
+    new Promise((resolve) => {
+      setTimeout(() => resolve(null), 3000)
+    })
   /* 
        如果在useEffect的第二个参数,传入一个空的数组,
        则useEffect只相当于componentDidMount
@@ -193,7 +240,7 @@ function HospitalSet() {
       </Form>
 
       <Space style={{ marginTop: 20 }}>
-        <Button type="primary" onClick={showModal}>
+        <Button type="primary" onClick={() => showModal()}>
           添加
         </Button>
         {/* 危险按钮是属性而不是type */}
